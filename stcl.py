@@ -9,7 +9,7 @@ Based on: "Schema-Typed Combinatory Logic: A Mathematical Foundation for Verifia
 """
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Optional, Dict, Tuple, Callable, Any, List
 import logging
@@ -102,20 +102,24 @@ class STCLType:
 
 class Term(ABC):
     @abstractmethod
-    def __str__(self) -> str: pass
+    def __str__(self) -> str:
+        pass
         
     @abstractmethod
-    def __eq__(self, other) -> bool: pass
+    def __eq__(self, other) -> bool:
+        pass
         
     @abstractmethod
-    def __hash__(self) -> int: pass
+    def __hash__(self) -> int:
+        pass
         
     @abstractmethod
-    def is_value(self) -> bool: pass
+    def is_value(self) -> bool:
+        pass
         
     @abstractmethod
-    def reduce(self, primitives: 'PrimitiveEnv') -> Optional[Term]: pass
-
+    def reduce(self, primitives: 'PrimitiveEnv') -> Optional[Term]:
+        pass
 
 @dataclass(frozen=True)
 class KCombinator(Term):
@@ -397,7 +401,9 @@ class Parser:
         while i < len(s):
             if s[i].isspace(): i += 1; continue
             if s[i] in 'KSBIC(),': toks.append(s[i]); i += 1; continue
+            # 🔧 FIX: Added handling for closing bracket '⟩'
             if s[i] == '⟨': toks.append('⟨'); i += 1; continue
+            if s[i] == '⟩': toks.append('⟩'); i += 1; continue
             if s[i:i+2] in ('π₁', 'π₂'): toks.append(s[i:i+2]); i += 2; continue
             if s[i] == '[':
                 j = s.find(']', i)
@@ -446,6 +452,7 @@ class Parser:
             l = self._parse_term()
             if not l or not self._consume(','): return None
             r = self._parse_term()
+            # 🔧 FIX: Now checks for '⟩' explicitly (requires tokenizer fix above)
             if not r or not self._consume('⟩'): return None
             return Pair(l, r)
         if t and t.startswith('[') and t.endswith(']'):
@@ -514,8 +521,6 @@ def test_arithmetic(penv: PrimitiveEnv, ev: Evaluator):
     mul_arg = Pair(inner_add, ConcreteValue(3))
     mul_test = Application(Primitive("mul"), mul_arg)
     res = ev.normalize(mul_test)
-    # Note: Inputs are ints, result is int. 
-    # (1+2)*3 = 9.
     assert isinstance(res, ConcreteValue) and res.value == 9, f"Mul complex failed: {res}"
     print("  ✓ [mul] ⟨[add] ⟨1, 2⟩, 3⟩ → 9")
     
